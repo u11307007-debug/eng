@@ -5,78 +5,128 @@
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <style>
     :root { --primary: #4285f4; --correct: #2e7d32; --wrong: #d32f2f; --bg: #f8f9fa; }
-    body { font-family: sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 20px; }
-    #topic-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; max-width: 500px; }
-    .topic-btn { background: white; border: 1px solid #ddd; padding: 15px; border-radius: 8px; cursor: pointer; }
-    #practice-area { display: none; background: white; padding: 20px; border-radius: 15px; text-align: center; width: 90%; max-width: 500px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-    #sentence-display { font-size: 24px; margin: 20px 0; min-height: 60px; }
-    .word { margin: 0 3px; display: inline-block; }
+    body { font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 20px; }
+    
+    /* 10個主題按鈕佈局 */
+    #topic-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; max-width: 600px; width: 100%; }
+    @media (min-width: 600px) { #topic-container { grid-template-columns: repeat(5, 1fr); } }
+    .topic-btn { background: white; border: 1px solid #ddd; padding: 15px 5px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; }
+    .topic-btn:hover { background: #e8f0fe; border-color: var(--primary); }
+
+    /* 麥克風確認彈窗 */
+    #mic-modal { 
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+      background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; 
+    }
+    .modal-content { background: white; padding: 30px; border-radius: 15px; text-align: center; max-width: 320px; }
+    .modal-btn { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 15px; }
+
+    /* 練習區 */
+    #practice-area { display: none; background: white; padding: 30px; border-radius: 20px; text-align: center; width: 100%; max-width: 600px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-top: 20px; }
+    #sentence-display { font-size: 26px; margin: 25px 0; min-height: 70px; line-height: 1.5; }
+    .word { margin: 0 4px; display: inline-block; transition: 0.3s; }
     .word.correct { color: var(--correct); font-weight: bold; }
     .word.wrong { color: var(--wrong); font-weight: bold; text-decoration: underline; }
-    .controls { display: flex; justify-content: center; gap: 20px; margin-bottom: 20px; }
-    .icon-btn { border: none; background: #eee; border-radius: 50%; width: 60px; height: 60px; cursor: pointer; }
-    .icon-btn.active { background: #ffcccc; animation: pulse 1s infinite; }
-    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+
+    .controls { display: flex; justify-content: center; gap: 20px; margin: 20px 0; }
+    .icon-btn { border: none; background: #f0f0f0; border-radius: 50%; width: 65px; height: 65px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .icon-btn.active { background: #ffcccc; animation: pulse 1.2s infinite; }
+    
+    #next-btn { background: var(--primary); color: white; border: none; padding: 12px 30px; border-radius: 25px; cursor: pointer; display: none; font-size: 16px; margin-top: 10px; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(211, 47, 47, 0); } 100% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0); } }
   </style>
 </head>
 <body>
 
-  <h1>AI 英語教室</h1>
+  <h1>AI 英語發音練習</h1>
 
   <div id="topic-container">
-    <button class="topic-btn" onclick="start('旅遊')">旅遊</button>
-    <button class="topic-btn" onclick="start('商務')">商務</button>
-    <button class="topic-btn" onclick="start('食物')">食物</button>
-    <button class="topic-btn" onclick="start('社交')">社交</button>
+    <button class="topic-btn" onclick="openMicModal('旅遊')">旅遊</button>
+    <button class="topic-btn" onclick="openMicModal('商務')">商務</button>
+    <button class="topic-btn" onclick="openMicModal('購物')">購物</button>
+    <button class="topic-btn" onclick="openMicModal('餐廳')">餐廳</button>
+    <button class="topic-btn" onclick="openMicModal('交通')">交通</button>
+    <button class="topic-btn" onclick="openMicModal('飯店')">飯店</button>
+    <button class="topic-btn" onclick="openMicModal('社交')">社交</button>
+    <button class="topic-btn" onclick="openMicModal('醫療')">醫療</button>
+    <button class="topic-btn" onclick="startFlow('興趣')">興趣</button>
+    <button class="topic-btn" onclick="openMicModal('自我介紹')">自介</button>
+  </div>
+
+  <div id="mic-modal">
+    <div class="modal-content">
+      <span class="material-icons" style="font-size: 48px; color: var(--primary);">mic</span>
+      <h3>需要麥克風權限</h3>
+      <p>點擊下方按鈕以允許瀏覽器存取麥克風，這將用於判斷您的發音。</p>
+      <button class="modal-btn" onclick="requestMicPermission()">確定並開始練習</button>
+    </div>
   </div>
 
   <div id="practice-area">
-    <div id="sentence-display">載入中...</div>
+    <div id="step-info" style="color:#888; font-size:12px;"></div>
+    <div id="sentence-display">正在連線 Gemini 老師出題中...</div>
+    
     <div class="controls">
       <button class="icon-btn" onclick="playTTS()"><span class="material-icons">volume_up</span></button>
       <button id="mic-btn" class="icon-btn" onclick="toggleMic()"><span class="material-icons">mic</span></button>
     </div>
-    <div id="status"></div>
-    <button id="next-btn" style="display:none; padding:10px 20px;" onclick="next()">下一題</button>
+    
+    <div id="status" style="margin-bottom:15px; color:#666;"></div>
+    <button id="next-btn" onclick="goNext()">下一題</button>
+    <p><a href="#" onclick="location.reload()" style="color:#bbb; font-size:12px; text-decoration:none;">← 返回選單</a></p>
   </div>
 
   <script>
-    // 🔴 重要：請在這裡貼上你「部署網頁應用程式」後的 URL
+    // 🔴 請在這裡填入你的 GAS 部署網址
     const GAS_URL = "https://script.google.com/macros/s/AKfycbwITPLgmoAASQFRILIAB8wsbYI2kLjv8wmJ7TJRzNqRKe10AKV9x2-A7g3po1IqDd6R/exec"; 
 
     let sentences = [];
     let currentIdx = 0;
+    let selectedTopic = "";
     let recognition;
     let isRecording = false;
 
-    async function start(topic) {
-      if (GAS_URL === "你的_GAS_部署網址_放在這裡") {
-        alert("請先在 HTML 程式碼中填入 GAS_URL！");
-        return;
-      }
+    // 開啟麥克風確認視窗
+    function openMicModal(topic) {
+      selectedTopic = topic;
+      document.getElementById('mic-modal').style.display = 'flex';
+    }
 
-      document.getElementById('topic-container').style.display = 'none';
-      document.getElementById('practice-area').style.display = 'block';
-      
+    // 請求麥克風權限並開始流程
+    async function requestMicPermission() {
       try {
-        // 使用 fetch 呼叫 GAS (使用 POST 避開快取)
-        const response = await fetch(`${GAS_URL}?topic=${topic}`, { method: 'POST' });
-        const result = await response.json();
-        
-        if (result.status === "success") {
-          sentences = result.data;
-          render();
-          initSTT();
-        } else {
-          alert("錯誤: " + result.message);
-        }
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+        document.getElementById('mic-modal').style.display = 'none';
+        startFlow(selectedTopic);
       } catch (e) {
-        alert("連線失敗，請檢查 GAS 部署是否設為「任何人」都可以存取。");
+        alert("必須取得麥克風授權才能繼續。");
       }
     }
 
-    function initSTT() {
+    // 連接後端出題
+    async function startFlow(topic) {
+      document.getElementById('topic-container').style.display = 'none';
+      document.getElementById('practice-area').style.display = 'block';
+      
+      initRecognition();
+
+      try {
+        const response = await fetch(`${GAS_URL}?topic=${topic}`, { method: 'POST' });
+        const result = await response.json();
+        if (result.status === "success") {
+          sentences = result.data;
+          render();
+        } else {
+          alert("Gemini 出錯: " + result.message);
+        }
+      } catch (e) {
+        alert("連線失敗。請確認 GAS 網址是否正確，且部署為「任何人」存取。");
+      }
+    }
+
+    function initRecognition() {
       const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!Speech) return alert("瀏覽器不支援發音辨識");
       recognition = new Speech();
       recognition.lang = 'en-US';
       recognition.onresult = (e) => {
@@ -84,17 +134,24 @@
         document.getElementById('mic-btn').classList.remove('active');
         compare(e.results[0][0].transcript);
       };
+      recognition.onerror = () => { isRecording = false; document.getElementById('mic-btn').classList.remove('active'); };
     }
 
     function render() {
-      document.getElementById('sentence-display').innerHTML = sentences[currentIdx].split(' ').map(w => `<span class="word">${w}</span>`).join(' ');
+      document.getElementById('step-info').innerText = `難度階段: ${currentIdx + 1} / 5`;
+      const text = sentences[currentIdx];
+      // 將句子切成單字
+      document.getElementById('sentence-display').innerHTML = text.split(' ').map(w => `<span class="word">${w}</span>`).join(' ');
+      document.getElementById('status').innerText = "點擊麥克風開始跟讀";
       document.getElementById('next-btn').style.display = 'none';
       playTTS();
     }
 
     function playTTS() {
+      speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(sentences[currentIdx]);
       u.lang = 'en-US';
+      u.rate = 0.85;
       speechSynthesis.speak(u);
     }
 
@@ -107,20 +164,24 @@
     }
 
     function compare(speech) {
-      const spoken = speech.toLowerCase().replace(/[.,!?;]/g, '').split(' ');
+      const clean = (t) => t.toLowerCase().replace(/[.,!?;]/g, '');
+      const spokenWords = clean(speech).split(' ');
       const spans = document.querySelectorAll('.word');
+      
       spans.forEach(span => {
-        const target = span.innerText.toLowerCase().replace(/[.,!?;]/g, '');
-        span.classList.add(spoken.includes(target) ? 'correct' : 'wrong');
+        const target = clean(span.innerText);
+        if (spokenWords.includes(target)) span.classList.add('correct');
+        else span.classList.add('wrong');
       });
-      document.getElementById('status').innerText = `辨識結果: ${speech}`;
+      
+      document.getElementById('status').innerText = `你念的是: "${speech}"`;
       document.getElementById('next-btn').style.display = 'inline-block';
     }
 
-    function next() {
+    function goNext() {
       currentIdx++;
-      if (currentIdx < sentences.length) render();
-      else { alert("完成！"); location.reload(); }
+      if (currentIdx < 5) render();
+      else { alert("恭喜完成所有挑戰！"); location.reload(); }
     }
   </script>
 </body>
